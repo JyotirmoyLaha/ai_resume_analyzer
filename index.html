@@ -218,7 +218,11 @@
     <script>
         // State Management
         let selectedFile = null;
-        const API_BASE_URL = "http://127.0.0.1:5000";
+       const API_BASE_URL = 
+  window.location.hostname === "localhost"
+    ? "http://127.0.0.1:5000"
+    : "https://ai-resume-analyzer-96fr.onrender.com";
+
 
         // Theme Management Logic
         const themeToggle = document.getElementById("theme-toggle");
@@ -400,4 +404,5 @@
     </script>
 </body>
 </html>
+
 
