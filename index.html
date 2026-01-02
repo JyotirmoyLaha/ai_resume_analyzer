@@ -17,9 +17,14 @@
         body { font-family: 'Inter', sans-serif; }
         .animate-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Smooth transition for theme switching */
+        .theme-transition, .theme-transition * {
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
     </style>
 </head>
-<body class="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-200 selection:bg-indigo-100 selection:text-indigo-900">
+<body class="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 theme-transition selection:bg-indigo-100 selection:text-indigo-900">
 
     <!-- Navigation -->
     <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50 transition-colors duration-200">
@@ -31,11 +36,12 @@
                 <span class="font-bold text-xl tracking-tight text-slate-900 dark:text-white">AI Resume Analyzer</span>
             </div>
             <div class="flex items-center space-x-4">
-                <button id="theme-toggle" class="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                    <i data-lucide="moon" id="theme-icon-moon" class="hidden"></i>
-                    <i data-lucide="sun" id="theme-icon-sun" class="hidden"></i>
+                <!-- Simplified Theme Toggle using CSS for visibility -->
+                <button id="theme-toggle" class="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none">
+                    <i data-lucide="moon" class="dark:hidden"></i>
+                    <i data-lucide="sun" class="hidden dark:block"></i>
                 </button>
-                <button onclick="window.location.reload()" class="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                <button onclick="window.location.reload()" class="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none">
                     <i data-lucide="refresh-cw" size="18"></i>
                 </button>
             </div>
@@ -56,7 +62,7 @@
         </div>
 
         <!-- Input Section -->
-        <div id="input-section" class="max-w-2xl mx-auto bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors duration-200">
+        <div id="input-section" class="max-w-2xl mx-auto bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700 overflow-hidden">
             <div class="p-8 space-y-8">
                 <!-- Role Selection -->
                 <div>
@@ -192,7 +198,7 @@
                         <div id="resources-container" class="space-y-4"></div>
                     </div>
 
-                    <button onclick="window.location.reload()" class="w-full py-4 border-2 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white transition-all">
+                    <button onclick="window.location.reload()" class="w-full py-4 border-2 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white transition-all focus:outline-none">
                         Start New Analysis
                     </button>
                 </div>
@@ -203,7 +209,7 @@
     <footer class="py-12 border-t border-slate-200 dark:border-slate-800 transition-colors duration-200">
         <div class="max-w-5xl mx-auto px-4 text-center">
             <p class="text-slate-400 dark:text-slate-500 text-sm">
-                &copy; 2024 AI Resume Analyzer. Built by Jyotirmoy Laha..
+                &copy; 2026 AI Resume Analyzer.  Built by Jyotirmoy Laha.
             </p>
         </div>
     </footer>
@@ -213,38 +219,25 @@
         let selectedFile = null;
         const API_BASE_URL = "http://127.0.0.1:5000";
 
-        // Theme Toggle Logic
+        // Theme Management Logic
         const themeToggle = document.getElementById("theme-toggle");
         const htmlElement = document.documentElement;
-        const moonIcon = document.getElementById("theme-icon-moon");
-        const sunIcon = document.getElementById("theme-icon-sun");
 
-        function updateThemeIcons() {
-            if (htmlElement.classList.contains("dark")) {
-                moonIcon.classList.add("hidden");
-                sunIcon.classList.remove("hidden");
-            } else {
-                sunIcon.classList.add("hidden");
-                moonIcon.classList.remove("hidden");
-            }
-            lucide.createIcons();
-        }
-
-        // Initial Load Theme
-        if (localStorage.getItem("theme") === "dark" || (!localStorage.getItem("theme") && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        // Initialize Theme (Runs immediately)
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme === "dark" || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             htmlElement.classList.add("dark");
-        } else {
-            htmlElement.classList.remove("dark");
         }
-        
-        // Initialize Icons for first time
-        updateThemeIcons();
 
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Toggle Theme
         themeToggle.addEventListener("click", () => {
             htmlElement.classList.toggle("dark");
             const isDark = htmlElement.classList.contains("dark");
             localStorage.setItem("theme", isDark ? "dark" : "light");
-            updateThemeIcons();
+            // No need to manually toggle icons here, Tailwind dark: class handles it
         });
 
         // DOM Elements
@@ -263,7 +256,7 @@
         const loader = document.getElementById('loader');
         const resultsDashboard = document.getElementById('results-dashboard');
 
-        // Fetch Roles on Load
+        // Fetch Roles
         async function fetchRoles() {
             try {
                 const res = await fetch(`${API_BASE_URL}/roles`);
@@ -272,12 +265,12 @@
                 roleSelect.innerHTML = roles.map(r => 
                     `<option value="${r}">${r.charAt(0).toUpperCase() + r.slice(1).replace('_', ' ')} Developer</option>`
                 ).join('');
+                lucide.createIcons(); // Refresh icons inside select if any
             } catch (err) {
-                console.log("Using fallback roles...");
+                console.warn("Backend not reachable at " + API_BASE_URL + ". Ensure your Flask server is running.");
             }
         }
-        fetchRoles();
-
+        
         // Handle File Selection
         function handleFiles(files) {
             const file = files[0];
@@ -287,10 +280,8 @@
                 fileSizeDisplay.textContent = `${(file.size / 1024).toFixed(1)} KB`;
                 
                 dropZone.classList.add('border-indigo-300', 'dark:border-indigo-500', 'bg-indigo-50/30', 'dark:bg-indigo-900/10');
-                uploadIconContainer.classList.replace('bg-slate-100', 'bg-indigo-100');
-                uploadIconContainer.classList.replace('dark:bg-slate-700', 'dark:bg-indigo-900/30');
-                uploadIconContainer.classList.replace('text-slate-500', 'text-indigo-600');
-                uploadIconContainer.classList.replace('dark:text-slate-400', 'dark:text-indigo-400');
+                uploadIconContainer.classList.add('bg-indigo-100', 'dark:bg-indigo-900/30', 'text-indigo-600', 'dark:text-indigo-400');
+                uploadIconContainer.classList.remove('bg-slate-100', 'dark:bg-slate-700', 'text-slate-500', 'dark:text-slate-400');
                 
                 analyzeBtn.disabled = false;
                 errorDiv.classList.add('hidden');
@@ -304,7 +295,7 @@
             errorDiv.classList.remove('hidden');
         }
 
-        // Event Listeners for Upload
+        // Listeners
         dropZone.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
         
@@ -328,10 +319,10 @@
         analyzeBtn.addEventListener('click', async () => {
             if (!selectedFile) return;
 
-            // Transition UI
             heroSection.classList.add('hidden');
             inputSection.classList.add('hidden');
             loader.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
 
             const formData = new FormData();
             formData.append("resume", selectedFile);
@@ -351,7 +342,7 @@
                 loader.classList.add('hidden');
                 heroSection.classList.remove('hidden');
                 inputSection.classList.remove('hidden');
-                showError(err.message);
+                showError(err.message + ". Is your backend running?");
             }
         });
 
@@ -359,14 +350,12 @@
             loader.classList.add('hidden');
             resultsDashboard.classList.remove('hidden');
 
-            // Set Stats
             document.getElementById('stat-score').textContent = `${data.match_percentage}%`;
             document.getElementById('stat-matched').textContent = data.total_matched;
             document.getElementById('stat-missing').textContent = data.total_missing;
             document.getElementById('rating-badge').textContent = data.rating;
             document.getElementById('career-feedback-text').textContent = data.career_feedback;
 
-            // Render Skills
             const matchedContainer = document.getElementById('matched-skills-container');
             matchedContainer.innerHTML = data.matched_skills.map(s => `
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold mr-2 mb-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50">
@@ -381,7 +370,6 @@
                 </span>
             `).join('') || '<p class="text-emerald-600 dark:text-emerald-400 text-sm font-medium">Perfect match!</p>';
 
-            // Recommendations
             document.getElementById('recommendations-list').innerHTML = data.recommendations.map(rec => `
                 <li class="flex items-start space-x-3 text-sm text-indigo-100 dark:text-indigo-200">
                     <div class="mt-1 bg-white/20 p-1 rounded-md"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-white"></i></div>
@@ -389,7 +377,6 @@
                 </li>
             `).join('');
 
-            // Resources
             const resourcesCard = document.getElementById('resources-card');
             const resourcesContainer = document.getElementById('resources-container');
             if (data.learning_resources && Object.keys(data.learning_resources).length > 0) {
@@ -404,9 +391,11 @@
                 resourcesCard.classList.add('hidden');
             }
 
-            // Re-run Lucide for new elements
             lucide.createIcons();
         }
+
+        // Run fetch on load
+        fetchRoles();
     </script>
 </body>
 </html>
