@@ -36,7 +36,6 @@
                 <span class="font-bold text-xl tracking-tight text-slate-900 dark:text-white">AI Resume Analyzer</span>
             </div>
             <div class="flex items-center space-x-4">
-                <!-- Simplified Theme Toggle using CSS for visibility -->
                 <button id="theme-toggle" class="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none">
                     <i data-lucide="moon" class="dark:hidden"></i>
                     <i data-lucide="sun" class="hidden dark:block"></i>
@@ -68,8 +67,8 @@
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Target Career Role</label>
                     <div class="relative">
-                        <select id="role-select" class="w-full pl-4 pr-10 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none transition-all outline-none">
-                           <option value="Select Role">Select Your Career Role</option>
+                        <select id="role-select" class="w-full pl-4 pr-10 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none transition-all outline-none cursor-pointer">
+                            <option value="" disabled selected>Select a role</option>
                             <option value="backend">Backend Developer</option>
                             <option value="frontend">Frontend Developer</option>
                             <option value="fullstack">Fullstack Developer</option>
@@ -207,42 +206,55 @@
         </div>
     </main>
 
+    <!-- Footer -->
     <footer class="py-12 border-t border-slate-200 dark:border-slate-800 transition-colors duration-200">
-        <div class="max-w-5xl mx-auto px-4 text-center">
-            <p class="text-slate-400 dark:text-slate-500 text-sm">
-                &copy; 2026 AI Resume Analyzer.  Built by Jyotirmoy Laha.
-            </p>
+        <div class="max-w-5xl mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center justify-between space-y-6 md:space-y-0 text-center md:text-left">
+                <div>
+                    <p class="text-slate-900 dark:text-white font-bold text-lg mb-1">AI Resume Analyzer</p>
+                    <p class="text-slate-400 dark:text-slate-500 text-sm italic">
+                        &copy; 2026 AI Resume Analyzer. Built by Jyotirmoy Laha.
+                    </p>
+                </div>
+                
+                <!-- Contact Links -->
+               <div class="flex flex-col items-center md:items-end space-y-2">
+                    <p class="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 dark:text-slate-500" >Contact Me</p>
+                    <div class="flex items-center space-x-6">
+                    <a href="https://www.linkedin.com/in/jyotirmoy-laha-416818319/" target="_blank" title="LinkedIn" class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                        <i data-lucide="linkedin" size="20"></i>
+                    </a>
+                    <a href="https://github.com/JyotirmoyLaha" target="_blank" title="GitHub" class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                        <i data-lucide="github" size="20"></i>
+                    </a>
+                    <a href="mailto:jyotirmoy713128@gmail.com" title="Email" class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                        <i data-lucide="mail" size="20"></i>
+                    </a>
+                </div>
+            </div>
         </div>
     </footer>
 
     <script>
         // State Management
         let selectedFile = null;
-       const API_BASE_URL = 
-  window.location.hostname === "localhost"
-    ? "http://127.0.0.1:5000"
-    : "https://ai-resume-analyzer-96fr.onrender.com";
+        const API_BASE_URL = window.location.hostname === "localhost"
+            ? "http://127.0.0.1:5000"
+            : "https://ai-resume-analyzer-96fr.onrender.com";
 
-
-        // Theme Management Logic
+        // Theme Management
         const themeToggle = document.getElementById("theme-toggle");
         const htmlElement = document.documentElement;
-
-        // Initialize Theme (Runs immediately)
         const savedTheme = localStorage.getItem("theme");
         if (savedTheme === "dark" || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             htmlElement.classList.add("dark");
         }
 
-        // Initialize Icons
         lucide.createIcons();
 
-        // Toggle Theme
         themeToggle.addEventListener("click", () => {
             htmlElement.classList.toggle("dark");
-            const isDark = htmlElement.classList.contains("dark");
-            localStorage.setItem("theme", isDark ? "dark" : "light");
-            // No need to manually toggle icons here, Tailwind dark: class handles it
+            localStorage.setItem("theme", htmlElement.classList.contains("dark") ? "dark" : "light");
         });
 
         // DOM Elements
@@ -261,21 +273,35 @@
         const loader = document.getElementById('loader');
         const resultsDashboard = document.getElementById('results-dashboard');
 
+        // Validation: Check if both file and role are present
+        function validateInput() {
+            const hasFile = selectedFile !== null;
+            const hasRole = roleSelect.value !== "";
+            analyzeBtn.disabled = !(hasFile && hasRole);
+        }
+
         // Fetch Roles
         async function fetchRoles() {
             try {
                 const res = await fetch(`${API_BASE_URL}/roles`);
                 if (!res.ok) throw new Error();
                 const roles = await res.json();
-                roleSelect.innerHTML = roles.map(r => 
+                
+                // Keep the default disabled option and add dynamic ones
+                const defaultOption = `<option value="" disabled selected>Select a role</option>`;
+                roleSelect.innerHTML = defaultOption + roles.map(r => 
                     `<option value="${r}">${r.charAt(0).toUpperCase() + r.slice(1).replace('_', ' ')} Developer</option>`
                 ).join('');
-                lucide.createIcons(); // Refresh icons inside select if any
+                
+                lucide.createIcons();
             } catch (err) {
-                console.warn("Backend not reachable at " + API_BASE_URL + ". Ensure your Flask server is running.");
+                console.warn("Backend not reachable. Ensure your server is running.");
             }
         }
         
+        // Handle Role Change
+        roleSelect.addEventListener('change', validateInput);
+
         // Handle File Selection
         function handleFiles(files) {
             const file = files[0];
@@ -288,8 +314,8 @@
                 uploadIconContainer.classList.add('bg-indigo-100', 'dark:bg-indigo-900/30', 'text-indigo-600', 'dark:text-indigo-400');
                 uploadIconContainer.classList.remove('bg-slate-100', 'dark:bg-slate-700', 'text-slate-500', 'dark:text-slate-400');
                 
-                analyzeBtn.disabled = false;
                 errorDiv.classList.add('hidden');
+                validateInput();
             } else {
                 showError("Please upload a valid PDF file.");
             }
@@ -300,7 +326,7 @@
             errorDiv.classList.remove('hidden');
         }
 
-        // Listeners
+        // Drop Zone Listeners
         dropZone.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
         
@@ -322,7 +348,7 @@
 
         // Analyze Logic
         analyzeBtn.addEventListener('click', async () => {
-            if (!selectedFile) return;
+            if (!selectedFile || !roleSelect.value) return;
 
             heroSection.classList.add('hidden');
             inputSection.classList.add('hidden');
@@ -347,7 +373,7 @@
                 loader.classList.add('hidden');
                 heroSection.classList.remove('hidden');
                 inputSection.classList.remove('hidden');
-                showError(err.message + ". Is your backend running?");
+                showError(err.message + ". Check your backend connection.");
             }
         });
 
@@ -399,11 +425,7 @@
             lucide.createIcons();
         }
 
-        // Run fetch on load
         fetchRoles();
     </script>
 </body>
 </html>
-
-
-
