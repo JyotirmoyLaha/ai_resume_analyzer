@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillGap AI - Resume Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .animate-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="bg-indigo-600 p-1.5 rounded-lg text-white">
+                    <i data-lucide="trending-up" size="20"></i>
+                </div>
+                <span class="font-bold text-xl tracking-tight text-slate-900">SkillGap AI</span>
+            </div>
+            <button onclick="window.location.reload()" class="text-slate-500 hover:text-indigo-600 transition-colors">
+                <i data-lucide="refresh-cw" size="18"></i>
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-4 py-12">
+        
+        <!-- Header Section (Hero) -->
+        <div id="hero-section" class="text-center mb-12 space-y-4">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+                Optimize Your Resume for <span class="text-indigo-600">Any Role</span>
+            </h1>
+            <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+                Upload your resume and select your target role to identify skill gaps, 
+                get career feedback, and receive actionable recommendations.
+            </p>
+        </div>
+
+        <!-- Input Section -->
+        <div id="input-section" class="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+            <div class="p-8 space-y-8">
+                <!-- Role Selection -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Target Career Role</label>
+                    <div class="relative">
+                        <select id="role-select" class="w-full pl-4 pr-10 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none transition-all outline-none">
+                            <option value="backend">Backend Developer</option>
+                            <option value="frontend">Frontend Developer</option>
+                            <option value="fullstack">Fullstack Developer</option>
+                            <option value="data_science">Data Scientist</option>
+                            <option value="devops">DevOps Engineer</option>
+                        </select>
+                        <i data-lucide="search" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size="18"></i>
+                    </div>
+                </div>
+
+                <!-- Upload Area -->
+                <div id="drop-zone" class="relative group border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center transition-all cursor-pointer hover:border-indigo-300 hover:bg-slate-50">
+                    <input type="file" id="resume-upload" class="hidden" accept=".pdf" />
+                    <div class="flex flex-col items-center">
+                        <div id="upload-icon-container" class="p-4 rounded-full mb-4 bg-slate-100 text-slate-500 transition-transform group-hover:scale-110">
+                            <i data-lucide="upload" id="main-icon" size="32"></i>
+                        </div>
+                        <h3 id="file-name-display" class="text-lg font-bold text-slate-900">Choose a PDF resume</h3>
+                        <p id="file-size-display" class="text-slate-500 text-sm mt-1">Drag and drop or click to browse</p>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="error-message" class="hidden flex items-center space-x-2 text-rose-600 bg-rose-50 p-4 rounded-xl text-sm border border-rose-100">
+                    <i data-lucide="alert-circle" size="18"></i>
+                    <span id="error-text"></span>
+                </div>
+
+                <!-- Submit Button -->
+                <button id="analyze-btn" disabled class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:cursor-not-allowed">
+                    <span>Analyze Resume</span>
+                    <i data-lucide="arrow-right" size="20"></i>
+                </button>
+            </div>
+            <div class="bg-slate-50 px-8 py-4 border-t border-slate-100">
+                <p class="text-xs text-center text-slate-400 uppercase tracking-widest font-semibold">
+                    Privacy Guaranteed • AI Driven • PDF Only
+                </p>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loader" class="hidden flex flex-col items-center justify-center py-20 space-y-4">
+            <div class="relative">
+                <div class="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+                <i data-lucide="search" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-indigo-600" size="24"></i>
+            </div>
+            <div class="text-center">
+                <h3 class="text-lg font-semibold text-slate-900">Analyzing Resume...</h3>
+                <p class="text-slate-500 text-sm">Our AI is extracting skills and calculating gaps.</p>
+            </div>
+        </div>
+
+        <!-- Results Dashboard -->
+        <div id="results-dashboard" class="hidden animate-in">
+            <!-- Summary Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4">
+                    <div class="p-3 rounded-xl bg-indigo-100 text-indigo-600">
+                        <i data-lucide="award" size="24"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Match Score</p>
+                        <p id="stat-score" class="text-2xl font-bold text-slate-900">0%</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4">
+                    <div class="p-3 rounded-xl bg-emerald-100 text-emerald-600">
+                        <i data-lucide="check-circle-2" size="24"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Matched Skills</p>
+                        <p id="stat-matched" class="text-2xl font-bold text-slate-900">0</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4">
+                    <div class="p-3 rounded-xl bg-rose-100 text-rose-600">
+                        <i data-lucide="x-circle" size="24"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Skill Gaps</p>
+                        <p id="stat-missing" class="text-2xl font-bold text-slate-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Content -->
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <h2 class="text-xl font-bold">Expert Feedback</h2>
+                            <span id="rating-badge" class="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full">Good</span>
+                        </div>
+                        <p id="career-feedback-text" class="text-slate-600 leading-relaxed text-lg"></p>
+                    </div>
+
+                    <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                            <div class="p-8">
+                                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">Matched Competencies</h3>
+                                <div id="matched-skills-container" class="flex flex-wrap"></div>
+                            </div>
+                            <div class="p-8 bg-slate-50/30">
+                                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">Missing Requirements</h3>
+                                <div id="missing-skills-container" class="flex flex-wrap"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar -->
+                <div class="space-y-8">
+                    <div class="bg-indigo-600 text-white p-8 rounded-3xl shadow-lg shadow-indigo-100">
+                        <h3 class="text-lg font-bold mb-6 flex items-center">
+                            <i data-lucide="trending-up" class="mr-2" size="20"></i>
+                            Next Steps
+                        </h3>
+                        <ul id="recommendations-list" class="space-y-4"></ul>
+                    </div>
+
+                    <div id="resources-card" class="hidden bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                        <h3 class="text-lg font-bold mb-6 flex items-center">
+                            <i data-lucide="book-open" class="mr-2 text-indigo-600" size="20"></i>
+                            Learning Paths
+                        </h3>
+                        <div id="resources-container" class="space-y-4"></div>
+                    </div>
+
+                    <button onclick="window.location.reload()" class="w-full py-4 border-2 border-slate-200 text-slate-500 font-bold rounded-2xl hover:bg-slate-100 hover:text-slate-800 transition-all">
+                        Start New Analysis
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-12 border-t border-slate-200">
+        <div class="max-w-5xl mx-auto px-4 text-center">
+            <p class="text-slate-400 text-sm">
+                &copy; 2024 AI Resume Analyzer. Built for Developers.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // State Management
+        let selectedFile = null;
+        const API_BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://127.0.0.1:5000"
+    : "https://ai-resume-analyzer-96fr.onrender.com";
+
+
+        // DOM Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('resume-upload');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const fileSizeDisplay = document.getElementById('file-size-display');
+        const uploadIconContainer = document.getElementById('upload-icon-container');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const errorDiv = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const roleSelect = document.getElementById('role-select');
+        
+        const heroSection = document.getElementById('hero-section');
+        const inputSection = document.getElementById('input-section');
+        const loader = document.getElementById('loader');
+        const resultsDashboard = document.getElementById('results-dashboard');
+
+        // Fetch Roles on Load
+        async function fetchRoles() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/roles`);
+                if (!res.ok) throw new Error();
+                const roles = await res.json();
+                roleSelect.innerHTML = roles.map(r => 
+                    `<option value="${r}">${r.charAt(0).toUpperCase() + r.slice(1).replace('_', ' ')} Developer</option>`
+                ).join('');
+            } catch (err) {
+                console.log("Using fallback roles...");
+            }
+        }
+        fetchRoles();
+
+        // Handle File Selection
+        function handleFiles(files) {
+            const file = files[0];
+            if (file && file.type === 'application/pdf') {
+                if (file.size > 2 * 1024 * 1024) {
+  showError("File size must be under 2MB.");
+  return;
+}
+
+                selectedFile = file;
+                fileNameDisplay.textContent = file.name;
+                fileSizeDisplay.textContent = `${(file.size / 1024).toFixed(1)} KB`;
+                
+                dropZone.classList.add('border-indigo-300', 'bg-indigo-50/30');
+                uploadIconContainer.classList.replace('bg-slate-100', 'bg-indigo-100');
+                uploadIconContainer.classList.replace('text-slate-500', 'text-indigo-600');
+                
+                analyzeBtn.disabled = false;
+                errorDiv.classList.add('hidden');
+            } else {
+                showError("Please upload a valid PDF file.");
+            }
+        }
+
+        function showError(msg) {
+            errorText.textContent = msg;
+            errorDiv.classList.remove('hidden');
+        }
+
+        // Event Listeners for Upload
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-indigo-400', 'bg-slate-100');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            if (!selectedFile) dropZone.classList.remove('border-indigo-400', 'bg-slate-100');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            handleFiles(e.dataTransfer.files);
+        });
+
+        // Analyze Logic
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            // Transition UI
+            heroSection.classList.add('hidden');
+            inputSection.classList.add('hidden');
+            loader.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append("resume", selectedFile);
+            formData.append("role", roleSelect.value);
+            formData.append("include_resources", "true");
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/analyze`, {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "Analysis failed");
+
+                renderResults(data);
+            } catch (err) {
+                loader.classList.add('hidden');
+                heroSection.classList.remove('hidden');
+                inputSection.classList.remove('hidden');
+                showError(err.message);
+            }
+        });
+
+        function renderResults(data) {
+            loader.classList.add('hidden');
+            resultsDashboard.classList.remove('hidden');
+
+            // Set Stats
+            document.getElementById('stat-score').textContent = `${data.match_percentage}%`;
+            document.getElementById('stat-matched').textContent = data.total_matched;
+            document.getElementById('stat-missing').textContent = data.total_missing;
+            document.getElementById('rating-badge').textContent = data.rating;
+            document.getElementById('career-feedback-text').textContent = data.career_feedback;
+
+            // Render Skills
+            const matchedContainer = document.getElementById('matched-skills-container');
+            matchedContainer.innerHTML = data.matched_skills.map(s => `
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold mr-2 mb-2 bg-emerald-50 text-emerald-700 border border-emerald-100">
+                    <i data-lucide="check-circle-2" class="mr-1 w-3 h-3"></i> ${s}
+                </span>
+            `).join('') || '<p class="text-slate-400 text-sm italic">No matching skills detected.</p>';
+
+            const missingContainer = document.getElementById('missing-skills-container');
+            missingContainer.innerHTML = data.missing_skills.map(s => `
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold mr-2 mb-2 bg-rose-50 text-rose-700 border border-rose-100">
+                    <i data-lucide="x-circle" class="mr-1 w-3 h-3"></i> ${s}
+                </span>
+            `).join('') || '<p class="text-emerald-600 text-sm font-medium">Perfect match!</p>';
+
+            // Recommendations
+            document.getElementById('recommendations-list').innerHTML = data.recommendations.map(rec => `
+                <li class="flex items-start space-x-3 text-sm text-indigo-100">
+                    <div class="mt-1 bg-white/20 p-1 rounded-md"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-white"></i></div>
+                    <span>${rec}</span>
+                </li>
+            `).join('');
+
+            // Resources
+            const resourcesCard = document.getElementById('resources-card');
+            const resourcesContainer = document.getElementById('resources-container');
+            if (data.learning_resources && Object.keys(data.learning_resources).length > 0) {
+                resourcesCard.classList.remove('hidden');
+                resourcesContainer.innerHTML = Object.entries(data.learning_resources).map(([skill, url]) => `
+                    <a href="${url}" target="_blank" class="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-indigo-300 hover:bg-indigo-50 transition-all group">
+                        <span class="font-semibold text-slate-700 capitalize">${skill}</span>
+                        <i data-lucide="arrow-right" class="text-slate-300 group-hover:text-indigo-600 transition-all w-4 h-4"></i>
+                    </a>
+                `).join('');
+            } else {
+                resourcesCard.classList.add('hidden');
+            }
+
+            // Re-run Lucide for new elements
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
